@@ -42,6 +42,7 @@ namespace NDTester
                     {
                         PCSize = newPCSize.ToArray();
                         primaryDimension = i;
+                        break;
                     }
                 }
 
