@@ -1,15 +1,5 @@
-﻿using Microsoft.Testing.Platform.OutputDevice;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using NDTester;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace NDTester.Tests
 {
@@ -19,17 +9,23 @@ namespace NDTester.Tests
         [TestMethod()]
         public void Test2d()
         {
-            Container con02d = new Container(new double[2] { 20, 20 });
-            Container con12d = new Container(new double[2] { 40, 40 });
+            //Console.WriteLine(Solver.UniquePermutations(new List<int> { 3, 3, 3 }));
+            //Console.WriteLine(Solver.ObjectPermuations(3));
+
+            //Container con02d = new Container(new double[2] { 20, 20 });
+            //Container con12d = new Container(new double[2] { 40, 40 });
             Container con22d = new Container(new double[2] { 300, 300 });
 
-            OrthogonalObject obj02d = new OrthogonalObject(new double[2] { 10, 10 }, 4);
-            OrthogonalObject obj12d = new OrthogonalObject(new double[2] { 40, 20 }, 100);
-            OrthogonalObject obj22d = new OrthogonalObject(new double[2] { 2, 3 }, 1000);
-            OrthogonalObject obj32d = new OrthogonalObject(new double[2] { 1, 3 }, 1525);
+            //OrthogonalObject obj02d = new OrthogonalObject(new double[2] { 10, 10 }, 4);
+            OrthogonalObject obj12d = new OrthogonalObject(new double[2] { 40, 20 }, 55);
+            OrthogonalObject obj22d = new OrthogonalObject(new double[2] { 2, 3 }, 3000);
+            OrthogonalObject obj32d = new OrthogonalObject(new double[2] { 1, 3 }, 5000);
+            OrthogonalObject obj42d = new OrthogonalObject(new double[2] { 5, 5 }, 100);
 
-            Container[] containers2d = new Container[3] { con02d, con12d, con22d };
-            OrthogonalObject[] objects2d = new OrthogonalObject[4] { obj02d, obj12d, obj22d, obj32d };
+            //Container[] containers2d = [con02d, con12d, con22d];
+            Container[] containers2d = [con22d];
+            //OrthogonalObject[] objects2d = [obj02d, obj12d, obj32d, obj22d, obj42d];
+            OrthogonalObject[] objects2d = [obj12d, obj32d, obj22d, obj42d];
 
             Solver solver2d = new Solver(2, objects2d, containers2d);
 
@@ -48,28 +44,28 @@ namespace NDTester.Tests
             sw.Stop();
             Console.WriteLine($"Solve time: {sw.ElapsedMilliseconds} ms, {sw.ElapsedTicks} ticks");
 
-            bool resultx = solverx.solve();
-
-            if (result2d && resultx)
+            if (result2d)
             {
                 Assert.IsTrue(true);
 
-                Console.WriteLine("2d result:");
-                foreach (OrthogonalObject obj in objects2d)
+                for (int i = 0; i < solver2d.results.Count; i++)
                 {
-                    foreach (PackedObject packedObj in obj.packedList)
-                    {
-                        Console.WriteLine($"Size: {obj.Size[0]}|{obj.Size[1]}, Container: {packedObj.ParentContainer.Size[0]}|{packedObj.ParentContainer.Size[1]}, x|y: {packedObj.Position[0]}|{packedObj.Position[1]}, orientation: {packedObj.Orientation[0]}");
-                    }
+                    SolverResult res = solver2d.results.ElementAt(i).Key;
+
+                    //Console.WriteLine("2d result:");
+                    //foreach (OrthogonalObject obj in res.OrthogonalObjects)
+                    //{
+                    //    foreach (PackedObject packedObj in obj.packedList)
+                    //    {
+                    //        Console.WriteLine($"Size: {obj.Size[0]}|{obj.Size[1]}, Container: {packedObj.ParentContainer.Size[0]}|{packedObj.ParentContainer.Size[1]}, x|y: {packedObj.Position[0]}|{packedObj.Position[1]}, orientation: {packedObj.Orientation[0]}");
+                    //    }
+                    //}
+                    Display2d(res.Containers, res.OrthogonalObjects, i);
                 }
-
-                Display2d(containers2d, objects2d);
-
-                Display2d(conxs, objxs);
             }
         }
 
-        public void Display2d(Container[] containers, OrthogonalObject[] objects)
+        public void Display2d(Container[] containers, OrthogonalObject[] objects, int num)
         {
             Dictionary<Container, Bitmap> bitmaps = new Dictionary<Container, Bitmap>();
             Dictionary<Container, Graphics> graphics = new Dictionary<Container, Graphics>();
@@ -128,7 +124,7 @@ namespace NDTester.Tests
 
             foreach (KeyValuePair<Container, Bitmap> kvp in bitmaps)
             {
-                string savePath = $"C:\\Users\\AMPW\\Pictures\\NDImages\\Container_{(int)kvp.Key.Size[0]}x{(int)kvp.Key.Size[1]}.png";
+                string savePath = $"C:\\Users\\AMPW\\Pictures\\NDImages\\Container_{num}_{(int)kvp.Key.Size[0]}x{(int)kvp.Key.Size[1]}.png";
                 kvp.Value.Save(savePath);
             }
 
@@ -172,16 +168,17 @@ namespace NDTester.Tests
             Container con03d = new Container(new double[3] { 10, 20, 30 });
             Container con13d = new Container(new double[3] { 40, 40, 40 });
             Container con23d = new Container(new double[3] { 100, 100, 100 });
-            Container con33d = new Container(new double[3] { 100, 100, 100 });
+            Container con33d = new Container(new double[3] { 1000, 1000, 1000 });
 
             OrthogonalObject obj03d = new OrthogonalObject(new double[3] { 20, 30, 10 }, 2);
-            OrthogonalObject obj13d = new OrthogonalObject(new double[3] {10, 10, 10 }, 10);
+            OrthogonalObject obj13d = new OrthogonalObject(new double[3] { 10, 10, 10 }, 10);
             OrthogonalObject obj23d = new OrthogonalObject(new double[3] { 5, 5, 5 }, 350);
-            OrthogonalObject obj33d = new OrthogonalObject(new double[3] { 1, 2, 3 }, 1000);
-            OrthogonalObject obj43d = new OrthogonalObject(new double[3] { 1, 2, 1 }, 1000);
+            OrthogonalObject obj33d = new OrthogonalObject(new double[3] { 1, 2, 3 }, 1000000);
+            OrthogonalObject obj43d = new OrthogonalObject(new double[3] { 1, 2, 1 }, 1000000);
             // Time for 2,000,362 objects: didn't finish in over 45 minutes
             // Time for 20,362 objects: 2.5 seconds
             // Time for 200,362 objects: 1.5 minutes
+            // Optimized Time for 200,362 objects: 1.6 minutes
 
             Container[] containers3d = new Container[] { con03d, con13d, con23d, con33d };
             OrthogonalObject[] objects3d = new OrthogonalObject[] { obj03d, obj13d, obj23d, obj33d, obj43d };

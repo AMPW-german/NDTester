@@ -11,11 +11,11 @@ namespace NDTesterUnitTests
             double[] pcSize = new double[] { 10.0, 10.0 };
 
             Container con = new Container(pcSize);
-            PotentialContainer initialPC = con.potentialContainers[0];
+            PotentialContainer initialPC = con.potentialContainers.First();
 
             double[] objectSize = new double[] { 10.0, 2.0 };
 
-            con.PlaceObject(con.potentialContainers[0], objectSize);
+            con.PlaceObject(initialPC, objectSize);
             //con.PlaceObject(con.potentialContainers[0], objectSize);
 
             // Print sizes and positions of new potential containers

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace NDTester
+﻿namespace NDTester
 {
     public class Container
     {
@@ -64,12 +58,20 @@ namespace NDTester
             //potentialContainers.AddRange(newContainers);
         }
 
+        public Container EmptyCopy()
+        {
+            double[] arr = new double[this.Size.Length];
+            Array.Copy(this.Size, arr, this.Size.Length);
+            Container con = new Container(arr);
+            return con;
+        }
+
         public Container(double[] Size)
         {
             this.Size = Size;
             this.Dimension = Size.Length;
 
-            potentialContainers = [ new PotentialContainer(Size, new double[Dimension])];
+            potentialContainers = new SortedSet<PotentialContainer> { new PotentialContainer(Size, new double[Dimension]) };
             PackedObjects = new SortedSet<PackedObject>();
         }
     }

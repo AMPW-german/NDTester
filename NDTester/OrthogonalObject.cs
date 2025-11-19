@@ -97,6 +97,13 @@ namespace NDTester
             return null;
         }
 
+        public OrthogonalObject EmptyCopy()
+        {
+            OrthogonalObject obj = new OrthogonalObject(new double[this.Size.Length], this.Count);
+            Array.Copy(this.Size, obj.Size, this.Size.Length);
+            return obj;
+        }
+
         public OrthogonalObject(double[] Size, int Count)
         {
             this.Size = Size;
