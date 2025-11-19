@@ -36,9 +36,6 @@ namespace NDTester
                     {
                         if (count == i)
                         {
-                            Console.WriteLine(a);
-                            Console.WriteLine(b);
-                            Console.WriteLine();
                             return;
                         }
                         count++;

@@ -8,8 +8,8 @@ namespace NDTester
 {
     public class Container
     {
-        internal int Dimension { get; private set; }
-        internal double[] Size { get; private set; }
+        public int Dimension { get; private set; }
+        public double[] Size { get; private set; }
 
         internal List<PackedObject> PackedObjects { get; private set; }
 
@@ -33,7 +33,7 @@ namespace NDTester
                 double[] PCSize = new double[Dimension];
                 int primaryDimension = 0;
 
-                for (int i = containerCount; i < Dimension; i++)
+                for (int i = 0; i < Dimension; i++)
                 {
                     double[] newPCSize = maxPos.ToArray();
                     newPCSize[i] -= size[i];

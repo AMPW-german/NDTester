@@ -10,11 +10,11 @@ namespace NDTester
     public class OrthogonalObject
     {
         internal int dimension { get; private set; }
-        internal double[] Size { get; private set; }
+        public double[] Size { get; private set; }
 
         public int Count { get; set; }
         public int PackedCount { get; set; }
-        internal List<PackedObject> packedList { get; set; }
+        public List<PackedObject> packedList { get; set; }
 
         public PackedObject? Place(Container c)
         {
@@ -73,16 +73,23 @@ namespace NDTester
                     if (canFit)
                     {
                         potentials.Add(pc, orientation);
+                        break;
                     }
                 }
             }
 
             if (potentials.Count > 0)
             {
-                KeyValuePair<PotentialContainer, BitArray> kvp = potentials.MinBy(kvp => Volume(kvp.Key.Size));
+
+                // minimum pc size -> leaves most remaining space for other objects but doesn't use the placement direction
+                // KeyValuePair<PotentialContainer, BitArray> kvp = potentials.MinBy(kvp => Volume(kvp.Key.Size));
+
+                // first fit -> uses the placement direction although it can lead to worse overall packing but that's where the object placement string allows for different iterations
+                KeyValuePair<PotentialContainer, BitArray> kvp = potentials.First();
 
                 c.PlaceObject(kvp.Key, PackedObject.GetSize(this, kvp.Value));
                 PackedObject obj = new PackedObject(this, c, kvp.Key.Position, kvp.Value);
+                packedList.Add(obj);
                 PackedCount++;
                 return obj;
             }
