@@ -28,7 +28,7 @@ namespace NDTester
 
             Dictionary<PotentialContainer, BitArray> potentials = new();
 
-            c.potentialContainers.Sort();
+            //c.potentialContainers.Sort();
             foreach (PotentialContainer pc in c.potentialContainers)
             {
                 if (Volume(pc.Size) >= objectVolume)

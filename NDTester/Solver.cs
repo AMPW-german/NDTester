@@ -18,6 +18,9 @@ namespace NDTester
 
         public bool solve()
         {
+            // Diffrent solve methods should be implemented with multi threading
+            // Results will compare empty volume after packing with the empty volume in load direction (aka the empty space at the "top" of the container) to account for enclosed empty space that is wasted
+
 #if DEBUG
             Stopwatch sw = new Stopwatch();
             Stopwatch containerSw = new Stopwatch();

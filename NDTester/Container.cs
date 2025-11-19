@@ -11,9 +11,9 @@ namespace NDTester
         public int Dimension { get; private set; }
         public double[] Size { get; private set; }
 
-        internal List<PackedObject> PackedObjects { get; private set; }
+        internal SortedSet<PackedObject> PackedObjects { get; private set; }
 
-        public List<PotentialContainer> potentialContainers;
+        public SortedSet<PotentialContainer> potentialContainers;
 
         public void PlaceObject(PotentialContainer pc, double[] size) // This enforces an increasing axis placement direction
         {
@@ -55,13 +55,13 @@ namespace NDTester
                 double[] newPCPos = pc.Position.ToArray();
                 newPCPos[primaryDimension] += size[primaryDimension];
 
-                newContainers.Add(new PotentialContainer(PCSize, newPCPos));
+                potentialContainers.Add(new PotentialContainer(PCSize, newPCPos));
                 containerCount++;
 
                 maxPos[primaryDimension] = size[primaryDimension];
             }
 
-            potentialContainers.AddRange(newContainers);
+            //potentialContainers.AddRange(newContainers);
         }
 
         public Container(double[] Size)
@@ -70,7 +70,7 @@ namespace NDTester
             this.Dimension = Size.Length;
 
             potentialContainers = [ new PotentialContainer(Size, new double[Dimension])];
-            PackedObjects = new List<PackedObject>();
+            PackedObjects = new SortedSet<PackedObject>();
         }
     }
 }
