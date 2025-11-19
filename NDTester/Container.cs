@@ -16,8 +16,6 @@
             potentialContainers.Remove(pc);
             double[] maxPos = pc.Size.ToArray();
 
-
-            List<PotentialContainer> newContainers = new List<PotentialContainer>();
             int containerCount = 0;
 
             while (containerCount < Dimension)
@@ -55,7 +53,66 @@
                 maxPos[primaryDimension] = size[primaryDimension];
             }
 
-            //potentialContainers.AddRange(newContainers);
+            CombinePotentialContainers();
+        }
+
+        public void CombinePotentialContainers()
+        {
+            // Combine adjecent potential containers
+            int containerCount = potentialContainers.Count;
+            int testedCount = 0;
+            while (testedCount < containerCount)
+            {
+                for (int i = testedCount; i < potentialContainers.Count; i++)
+                {
+                    bool canCombine = false;
+                    int combineDim = -1;
+                    // d - 1 sizes must be equal, 1 size can be different
+
+                    PotentialContainer currentPC = potentialContainers.ElementAt(testedCount);
+                    PotentialContainer testPC = potentialContainers.ElementAt(i);
+
+                    // PCs can be combined if they are NOT adjacent in only one dimension and their sizes are equal in all other dimensions
+                    for (int d = 0; d < Dimension; d++)
+                    {
+                        // Check if both PCs are adjacent in this dimension
+                        if (currentPC.Position[d] + currentPC.Size[d] == testPC.Position[d] ||
+                            testPC.Position[d] + testPC.Size[d] == currentPC.Position[d])
+                        {
+                            combineDim = d;
+                            canCombine = true;
+
+                            for (int sizeD = 0; sizeD < Dimension; sizeD++)
+                            {
+                                if (sizeD != d)
+                                {
+                                    if (currentPC.Size[sizeD] != testPC.Size[sizeD])
+                                    {
+                                        canCombine = false;
+                                        combineDim = -1;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (canCombine)
+                    {
+                        Console.WriteLine($"Combining PCs:\n\tPC 0: {string.Join(',', currentPC.Size)}; {string.Join(',', currentPC.Position)}\n\tPC 1: {string.Join(',', testPC.Size)}; {string.Join(',', testPC.Position)}");
+
+                        testedCount--;
+                        containerCount--;
+                        currentPC.Size[combineDim] += testPC.Size[combineDim];
+                        currentPC.Position[combineDim] = Math.Min(currentPC.Position[combineDim], testPC.Position[combineDim]);
+                        potentialContainers.Remove(testPC);
+                        break;
+                    }
+                }
+                testedCount++;
+            }
+
+            potentialContainers.Order();
         }
 
         public Container EmptyCopy()

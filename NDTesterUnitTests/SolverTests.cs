@@ -14,11 +14,11 @@ namespace NDTester.Tests
 
             //Container con02d = new Container(new double[2] { 20, 20 });
             //Container con12d = new Container(new double[2] { 40, 40 });
-            Container con22d = new Container(new double[2] { 300, 300 });
+            Container con22d = new Container(new double[2] { 200, 400 });
 
             //OrthogonalObject obj02d = new OrthogonalObject(new double[2] { 10, 10 }, 4);
             OrthogonalObject obj12d = new OrthogonalObject(new double[2] { 40, 20 }, 55);
-            OrthogonalObject obj22d = new OrthogonalObject(new double[2] { 2, 3 }, 3000);
+            OrthogonalObject obj22d = new OrthogonalObject(new double[2] { 2, 3 }, 5000);
             OrthogonalObject obj32d = new OrthogonalObject(new double[2] { 1, 3 }, 5000);
             OrthogonalObject obj42d = new OrthogonalObject(new double[2] { 5, 5 }, 100);
 
@@ -26,6 +26,7 @@ namespace NDTester.Tests
             Container[] containers2d = [con22d];
             //OrthogonalObject[] objects2d = [obj02d, obj12d, obj32d, obj22d, obj42d];
             OrthogonalObject[] objects2d = [obj12d, obj32d, obj22d, obj42d];
+            //OrthogonalObject[] objects2d = [obj22d];
 
             Solver solver2d = new Solver(2, objects2d, containers2d);
 
@@ -124,7 +125,7 @@ namespace NDTester.Tests
 
             foreach (KeyValuePair<Container, Bitmap> kvp in bitmaps)
             {
-                string savePath = $"C:\\Users\\AMPW\\Pictures\\NDImages\\Container_{num}_{(int)kvp.Key.Size[0]}x{(int)kvp.Key.Size[1]}.png";
+                string savePath = $"C:\\Users\\AMPW\\Pictures\\NDImages\\Container_Combined_2_200x400\\Container_{num}_{(int)kvp.Key.Size[0]}x{(int)kvp.Key.Size[1]}.png";
                 kvp.Value.Save(savePath);
             }
 
@@ -168,7 +169,7 @@ namespace NDTester.Tests
             Container con03d = new Container(new double[3] { 10, 20, 30 });
             Container con13d = new Container(new double[3] { 40, 40, 40 });
             Container con23d = new Container(new double[3] { 100, 100, 100 });
-            Container con33d = new Container(new double[3] { 1000, 1000, 1000 });
+            Container con33d = new Container(new double[3] { 10000, 10000, 10000 });
 
             OrthogonalObject obj03d = new OrthogonalObject(new double[3] { 20, 30, 10 }, 2);
             OrthogonalObject obj13d = new OrthogonalObject(new double[3] { 10, 10, 10 }, 10);
