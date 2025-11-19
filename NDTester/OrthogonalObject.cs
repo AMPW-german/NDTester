@@ -15,12 +15,11 @@ namespace NDTester
         public int Count { get; set; }
         public int PackedCount { get; set; }
         public List<PackedObject> packedList { get; set; }
+        public static double Volume(double[] size) => size.Aggregate(1.0, (a, b) => a * b);
 
         public PackedObject? Place(Container c)
         {
             if (PackedCount >= Count) return null;
-
-            double Volume(double[] size) => size.Aggregate(1.0, (a, b) => a * b);
 
             double objectVolume = Volume(this.Size);
 

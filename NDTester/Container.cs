@@ -99,8 +99,6 @@
 
                     if (canCombine)
                     {
-                        Console.WriteLine($"Combining PCs:\n\tPC 0: {string.Join(',', currentPC.Size)}; {string.Join(',', currentPC.Position)}\n\tPC 1: {string.Join(',', testPC.Size)}; {string.Join(',', testPC.Position)}");
-
                         testedCount--;
                         containerCount--;
                         currentPC.Size[combineDim] += testPC.Size[combineDim];

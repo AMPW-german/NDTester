@@ -14,13 +14,13 @@ namespace NDTester.Tests
 
             //Container con02d = new Container(new double[2] { 20, 20 });
             //Container con12d = new Container(new double[2] { 40, 40 });
-            Container con22d = new Container(new double[2] { 200, 400 });
+            Container con22d = new Container(new double[2] { 2000, 4000 });
 
             //OrthogonalObject obj02d = new OrthogonalObject(new double[2] { 10, 10 }, 4);
             OrthogonalObject obj12d = new OrthogonalObject(new double[2] { 40, 20 }, 55);
-            OrthogonalObject obj22d = new OrthogonalObject(new double[2] { 2, 3 }, 5000);
-            OrthogonalObject obj32d = new OrthogonalObject(new double[2] { 1, 3 }, 5000);
-            OrthogonalObject obj42d = new OrthogonalObject(new double[2] { 5, 5 }, 100);
+            OrthogonalObject obj22d = new OrthogonalObject(new double[2] { 2, 3 }, 500);
+            OrthogonalObject obj32d = new OrthogonalObject(new double[2] { 1, 3 }, 50000);
+            OrthogonalObject obj42d = new OrthogonalObject(new double[2] { 5, 5 }, 50000);
 
             //Container[] containers2d = [con02d, con12d, con22d];
             Container[] containers2d = [con22d];
@@ -68,6 +68,9 @@ namespace NDTester.Tests
 
         public void Display2d(Container[] containers, OrthogonalObject[] objects, int num)
         {
+            if (!OperatingSystem.IsWindows()) return;
+
+            #pragma warning disable CA1416 // Validate platform compatibility
             Dictionary<Container, Bitmap> bitmaps = new Dictionary<Container, Bitmap>();
             Dictionary<Container, Graphics> graphics = new Dictionary<Container, Graphics>();
 
@@ -81,9 +84,11 @@ namespace NDTester.Tests
             //g.FillRectangle(Brushes.Black, new RectangleF(0, 0, 500, 200));
             //g.DrawRectangle(Pens.Red, new Rectangle(0, 0, 499, 199));
 
+            int multiplier = 2;
+
             foreach (Container item in containers)
             {
-                Bitmap bitmap = new Bitmap((int)item.Size[0] * 10, (int)item.Size[1] * 10);
+                Bitmap bitmap = new Bitmap((int)item.Size[0] * multiplier, (int)item.Size[1] * multiplier);
                 Graphics gfx = Graphics.FromImage(bitmap);
 
                 gfx.Clear(Color.White);
@@ -108,8 +113,8 @@ namespace NDTester.Tests
 
                     Graphics gfx = graphics[packedObj.ParentContainer];
 
-                    gfx.FillRectangle(new SolidBrush(fillColors[obj]), (float)(packedObj.Position[0] * 10), (float)(packedObj.Position[1] * 10), (float)(PackedObject.GetSize(obj, packedObj.Orientation)[0] * 10) - 1, (float)(PackedObject.GetSize(obj, packedObj.Orientation)[1] * 10) - 1);
-                    gfx.DrawRectangle(new Pen(outlineColors[obj]), (float)(packedObj.Position[0] * 10), (float)(packedObj.Position[1] * 10), (float)(PackedObject.GetSize(obj, packedObj.Orientation)[0] * 10) - 1, (float)(PackedObject.GetSize(obj, packedObj.Orientation)[1] * 10) - 1);
+                    gfx.FillRectangle(new SolidBrush(fillColors[obj]), (float)(packedObj.Position[0] * multiplier), (float)(packedObj.Position[1] * multiplier), (float)(PackedObject.GetSize(obj, packedObj.Orientation)[0] * multiplier) - 1, (float)(PackedObject.GetSize(obj, packedObj.Orientation)[1] * multiplier) - 1);
+                    gfx.DrawRectangle(new Pen(outlineColors[obj]), (float)(packedObj.Position[0] * multiplier), (float)(packedObj.Position[1] * multiplier), (float)(PackedObject.GetSize(obj, packedObj.Orientation)[0] * multiplier) - 1, (float)(PackedObject.GetSize(obj, packedObj.Orientation)[1] * multiplier) - 1);
                 }
             }
 
@@ -118,7 +123,7 @@ namespace NDTester.Tests
                 foreach (PotentialContainer pc in c.potentialContainers)
                 {
                     Graphics gfx = graphics[c];
-                    gfx.DrawRectangle(Pens.Gray, (float)(pc.Position[0] * 10), (float)(pc.Position[1] * 10), (float)(pc.Size[0] * 10) - 1, (float)(pc.Size[1] * 10) - 1);
+                    gfx.DrawRectangle(Pens.Gray, (float)(pc.Position[0] * multiplier), (float)(pc.Position[1] * multiplier), (float)(pc.Size[0] * multiplier) - 1, (float)(pc.Size[1] * multiplier) - 1);
                     // Merge PCs if possible to allow more objects to be placed
                 }
             }
@@ -129,43 +134,12 @@ namespace NDTester.Tests
                 kvp.Value.Save(savePath);
             }
 
-            //image.Save("C:\\Users\\AMPW\\Downloads\\ND2dImage.png");
+            #pragma warning restore CA1416 // Validate platform compatibility
         }
 
         [TestMethod()]
         public void Test3d()
         {
-            /*
-            #region 2d
-            Container con02d = new Container(new double[2] { 20, 20 });
-            Container con12d = new Container(new double[2] { 40, 40 });
-
-            OrthogonalObject obj02d = new OrthogonalObject(new double[2] { 10, 10 }, 4);
-            OrthogonalObject obj12d = new OrthogonalObject(new double[2] { 40, 20 }, 2);
-
-            Container[] containers2d = new Container[2] { con02d, con12d };
-            OrthogonalObject[] objects2d = new OrthogonalObject[2] { obj12d, obj02d };
-
-            Solver solver2d = new Solver(2, objects2d, containers2d);
-            bool result2d = solver2d.solve();
-
-            if (result2d)
-            {
-                Assert.IsTrue(result2d);
-
-                Console.WriteLine("2d result:");
-                foreach (OrthogonalObject obj in objects2d)
-                {
-                    foreach (PackedObject packedObj in obj.packedList)
-                    {
-                        Console.WriteLine($"Size: {obj.Size[0]}|{obj.Size[1]}, Container: {packedObj.ParentContainer.Size[0]}|{packedObj.ParentContainer.Size[1]}, x|y: {packedObj.Position[0]}|{packedObj.Position[1]}, orientation: {packedObj.Orientation[0]}");
-                    }
-                }
-            }
-            #endregion
-            */
-
-            #region 3d
             Container con03d = new Container(new double[3] { 10, 20, 30 });
             Container con13d = new Container(new double[3] { 40, 40, 40 });
             Container con23d = new Container(new double[3] { 100, 100, 100 });
@@ -174,15 +148,17 @@ namespace NDTester.Tests
             OrthogonalObject obj03d = new OrthogonalObject(new double[3] { 20, 30, 10 }, 2);
             OrthogonalObject obj13d = new OrthogonalObject(new double[3] { 10, 10, 10 }, 10);
             OrthogonalObject obj23d = new OrthogonalObject(new double[3] { 5, 5, 5 }, 350);
-            OrthogonalObject obj33d = new OrthogonalObject(new double[3] { 1, 2, 3 }, 1000000);
-            OrthogonalObject obj43d = new OrthogonalObject(new double[3] { 1, 2, 1 }, 1000000);
+            OrthogonalObject obj33d = new OrthogonalObject(new double[3] { 1, 2, 3 }, 10000);
+            OrthogonalObject obj43d = new OrthogonalObject(new double[3] { 1, 2, 1 }, 10000);
+            OrthogonalObject obj53d = new OrthogonalObject(new double[3] { 1, 2, 2 }, 10000);
+            OrthogonalObject obj63d = new OrthogonalObject(new double[3] { 1, 4, 1 }, 10000);
             // Time for 2,000,362 objects: didn't finish in over 45 minutes
             // Time for 20,362 objects: 2.5 seconds
             // Time for 200,362 objects: 1.5 minutes
             // Optimized Time for 200,362 objects: 1.6 minutes
 
             Container[] containers3d = new Container[] { con03d, con13d, con23d, con33d };
-            OrthogonalObject[] objects3d = new OrthogonalObject[] { obj03d, obj13d, obj23d, obj33d, obj43d };
+            OrthogonalObject[] objects3d = new OrthogonalObject[] { obj03d, obj13d, obj23d, obj33d, obj43d, obj53d, obj63d };
 
             Solver solver3d = new Solver(3, objects3d, containers3d);
 
@@ -214,7 +190,6 @@ namespace NDTester.Tests
                 //Console.WriteLine(sb.ToString());
             }
             */
-            #endregion
 
             //Assert.Fail();
         }

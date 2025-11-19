@@ -29,37 +29,41 @@ namespace NDTester
         public OrthogonalObject[] OrthogonalObjects { get; private set; }
         public Container[] Containers { get; private set; }
 
-        public static ulong UniquePermutations(List<int> ObjectCounts)
+        public static int UniquePermutations(List<int> ObjectCounts)
         {
-            ulong count = (ulong)ObjectCounts.Sum();
-            ulong res = 1;
-            for (ulong i = 2; i <= count; i++) res *= i;
+            int count = ObjectCounts.Sum();
+            int res = 1;
+            for (int i = 2; i <= count; i++) res *= i;
 
-            ulong objectCount = (ulong)ObjectCounts.Count();
-            ulong divider = 1;
-            for (ulong i = 2; i <= objectCount; i++) divider *= i;
-            ulong divider2 = divider;
-            for (ulong i = 1; i < objectCount; i++) divider *= divider2;
+            int objectCount = ObjectCounts.Count();
+            int divider = 1;
+            for (int i = 2; i <= objectCount; i++) divider *= i;
+            int divider2 = divider;
+            for (int i = 1; i < objectCount; i++) divider *= divider2;
 
             return res / divider;
         }
 
-        public static ulong ObjectPermuations(int objectCount) => (ulong)Enumerable.Range(1, objectCount).Aggregate(1, (a, b) => a * b);
+        public static int ObjectPermutations(int objectCount) => Enumerable.Range(1, objectCount).Aggregate(1, (a, b) => a * b);
 
-        public bool solve(ulong maxPermutations = ulong.MaxValue)
+        public bool solve(int maxPermutations = 8192)
         {
-            // Diffrent solve methods should be implemented with multi threading
-            // Results will compare empty volume after packing with the empty volume in load direction (aka the empty space at the "top" of the container) to account for enclosed empty space that is wasted
+            // Different solve methods should be implemented with multi threading
+            // Results can compare empty volume after packing with the empty volume in load direction (aka the empty space at the "top" of the container) to account for enclosed empty space that is wasted
+            // Results comparison is not scope of this project as it's only intended to find out if packing is possible, not how well it packs
+            // Changing the container order also adds possible permutations but that would increase the permutation count too much
 
             // Unique permutations are not solved yet
-            ulong permutations = Solver.ObjectPermuations(OrthogonalObjects.Length);
+            int permutations = Solver.ObjectPermutations(OrthogonalObjects.Length);
 
             int numProcs = Environment.ProcessorCount;
             int concurrencyLevel = numProcs * 2;
 
+            //Console.WriteLine($"Permutation count: {permutations}");
+
             if (permutations < maxPermutations)
             {
-                Console.WriteLine($"Permutation count: {permutations}");
+                //Console.WriteLine("Permutation count less than max permutations, using all permutations.");
 
                 int initialCapacity = (int)permutations;
                 results = new ConcurrentDictionary<SolverResult, bool>(concurrencyLevel, initialCapacity);
@@ -112,73 +116,134 @@ namespace NDTester
                     }
                 }
 
-                foreach (Task t in tasks)
-                    t.Start();
+                foreach (Task t in tasks) t.Start();
 
                 Task.WaitAll(tasks);
-                Console.WriteLine("All tasks finished");
+                //Console.WriteLine("All tasks finished");
             }
-            return true;
-#if DEBUG
-            Stopwatch sw = new Stopwatch();
-            Stopwatch containerSw = new Stopwatch();
+            else
+            {
+                //Console.WriteLine("Permutation count higher than max permutations, generating max permutations");
 
-            //Array.Sort(OrthogonalObjects);
-            //Array.Sort(Containers);
-            foreach (OrthogonalObject obj in OrthogonalObjects)
-            {
-                sw.Restart();
-                for (int i = obj.PackedCount; i < obj.Count; i++)
+                // TODO: Add partially random permutations for large permutation counts
+                // Must be included (if enough max permutations):
+                // Default order
+                // Reverse order
+                // Largest to smallest (volume, primary dimension)
+                // Smallest to largest
+
+                results = new ConcurrentDictionary<SolverResult, bool>(concurrencyLevel, (int) maxPermutations);
+
+                Task[] tasks = new Task[permutations];
+                int taskCount = 0;
+                int objectCount = OrthogonalObjects.Length;
+
+                #region defaultOrder
+                OrthogonalObject[] orthogonalObjectsCopy = new OrthogonalObject[objectCount];
+                for (int j = 0; j < objectCount; j++)
+                    orthogonalObjectsCopy[j] = OrthogonalObjects[j].EmptyCopy();
+
+                Container[] containersCopy = new Container[Containers.Length];
+                for (int j = 0; j < Containers.Length; j++)
+                    containersCopy[j] = Containers[j].EmptyCopy();
+
+                tasks[taskCount] = new Task(() => solverThread(orthogonalObjectsCopy, containersCopy));
+                taskCount++;
+                #endregion
+
+                #region reverseOrder
+                OrthogonalObject[] reverseOrthogonalObjectsCopy = new OrthogonalObject[objectCount];
+                for (int j = 0; j < objectCount; j++)
+                    reverseOrthogonalObjectsCopy[j] = OrthogonalObjects[objectCount - 1 - j].EmptyCopy();
+
+                Container[] reverseContainersCopy = new Container[Containers.Length];
+                for (int j = 0; j < Containers.Length; j++)
+                    reverseContainersCopy[j] = Containers[j].EmptyCopy();
+
+                tasks[taskCount] = new Task(() => solverThread(reverseOrthogonalObjectsCopy, reverseContainersCopy));
+                taskCount++;
+                #endregion
+
+                #region largestToSmallestVolume
+                OrthogonalObject[] sortedVolumeOrthogonalObjectsCopy = new OrthogonalObject[objectCount];
+                for (int j = 0; j < objectCount; j++)
+                    sortedVolumeOrthogonalObjectsCopy[j] = OrthogonalObjects[j].EmptyCopy();
+                Array.Sort(sortedVolumeOrthogonalObjectsCopy, (a, b) => OrthogonalObject.Volume(a.Size).CompareTo(OrthogonalObject.Volume(b.Size)));
+
+                Container[] sortedVolumeContainersCopy = new Container[Containers.Length];
+                for (int j = 0; j < Containers.Length; j++)
+                    sortedVolumeContainersCopy[j] = Containers[j].EmptyCopy();
+
+                tasks[taskCount] = new Task(() => solverThread(sortedVolumeOrthogonalObjectsCopy, sortedVolumeContainersCopy));
+                taskCount++;
+                #endregion
+
+                #region smallestToLargestVolume
+                OrthogonalObject[] smallestSortedVolumeOrthogonalObjectsCopy = new OrthogonalObject[objectCount];
+                for (int j = 0; j < objectCount; j++)
+                    smallestSortedVolumeOrthogonalObjectsCopy[j] = sortedVolumeOrthogonalObjectsCopy[objectCount - 1 - j].EmptyCopy();
+
+                Container[] smallestSorterVolumeContainersCopy = new Container[Containers.Length];
+                for (int j = 0; j < Containers.Length; j++)
+                    smallestSorterVolumeContainersCopy[j] = Containers[j].EmptyCopy();
+
+                tasks[taskCount] = new Task(() => solverThread(smallestSortedVolumeOrthogonalObjectsCopy, smallestSorterVolumeContainersCopy));
+                taskCount++;
+                #endregion
+
+                #region largestToSmallestPrimary
+                OrthogonalObject[] sortedPrimaryOrthogonalObjectsCopy = new OrthogonalObject[objectCount];
+                for (int j = 0; j < objectCount; j++)
+                    sortedPrimaryOrthogonalObjectsCopy[j] = OrthogonalObjects[j].EmptyCopy();
+                Array.Sort(sortedPrimaryOrthogonalObjectsCopy, (a, b) => a.Size[0].CompareTo(b.Size[0]));
+
+                Container[] sortedPrimaryContainersCopy = new Container[Containers.Length];
+                for (int j = 0; j < Containers.Length; j++)
+                    sortedPrimaryContainersCopy[j] = Containers[j].EmptyCopy();
+
+                tasks[taskCount] = new Task(() => solverThread(sortedPrimaryOrthogonalObjectsCopy, sortedPrimaryContainersCopy));
+                taskCount++;
+                #endregion
+
+                #region smallestToLargestPrimary
+                OrthogonalObject[] smallestSortedPrimaryOrthogonalObjectsCopy = new OrthogonalObject[objectCount];
+                for (int j = 0; j < objectCount; j++)
+                    smallestSortedPrimaryOrthogonalObjectsCopy[j] = sortedPrimaryOrthogonalObjectsCopy[objectCount - 1 - j].EmptyCopy();
+
+                Container[] smallestSortedPrimaryContainersCopy = new Container[Containers.Length];
+                for (int j = 0; j < Containers.Length; j++)
+                    smallestSortedPrimaryContainersCopy[j] = Containers[j].EmptyCopy();
+
+                tasks[taskCount] = new Task(() => solverThread(smallestSortedPrimaryOrthogonalObjectsCopy, smallestSortedPrimaryContainersCopy));
+                taskCount++;
+                #endregion
+
+                #region randomOrder
+                Random r = new Random();
+                while (taskCount < (int) maxPermutations)
                 {
-                    containerSw.Restart();
-                    bool placed = false;
-                    foreach (Container c in Containers)
-                    {
-                        if (obj.Place(c) != null)
-                        {
-                            placed = true;
-                            break;
-                        }
-                    }
-                    if (!placed)
-                    {
-                        // Failed to place objects, needs to be reworked
-                        throw new Exception("Could not place all objects.");
-                    }
-                    containerSw.Stop();
-                    Console.WriteLine($"container pack time: {containerSw.ElapsedMilliseconds} ms, {containerSw.ElapsedTicks} ticks");
+                    OrthogonalObject[] rngOrthogonalObjectsCopy = new OrthogonalObject[objectCount];
+                    for (int j = 0; j < objectCount; j++)
+                        rngOrthogonalObjectsCopy[j] = OrthogonalObjects[j].EmptyCopy();
+                    r.Shuffle(rngOrthogonalObjectsCopy);
+
+                    Container[] rngContainerCopy = new Container[Containers.Length];
+                    for (int j = 0; j < Containers.Length; j++)
+                        smallestSortedPrimaryContainersCopy[j] = Containers[j].EmptyCopy();
+
+                    tasks[taskCount] = new Task(() => solverThread(rngOrthogonalObjectsCopy, rngContainerCopy));
+                    taskCount++;
                 }
-                sw.Stop();
-                Console.WriteLine($"total count pack time: {sw.ElapsedMilliseconds} ms, {sw.ElapsedTicks} ticks");
+                #endregion
+
+                foreach (Task t in tasks) t.Start();
+
+                Task.WaitAll(tasks);
+                //Console.WriteLine("All tasks finished");
             }
-            return true;
-#else
-            //Array.Sort(OrthogonalObjects);
-            //Array.Sort(Containers);
-            foreach (OrthogonalObject obj in OrthogonalObjects)
-            {
-                for (int i = obj.PackedCount; i < obj.Count; i++)
-                {
-                    bool placed = false;
-                    foreach (Container c in Containers)
-                    {
-                        if (obj.Place(c) != null)
-                        {
-                            placed = true;
-                            break;
-                        }
-                    }
-                    if (!placed)
-                    {
-                        // Failed to place objects, needs to be reworked
-                        throw new Exception("Could not place all objects.");
-                    }
-                }
-            }
-            return true;
-#endif
+            return results.Any(kvp => kvp.Value);
         }
-        
+
         public bool solverThread(OrthogonalObject[] OrthogonalObjects, Container[] Containers)
         {
             //Array.Sort(OrthogonalObjects);
