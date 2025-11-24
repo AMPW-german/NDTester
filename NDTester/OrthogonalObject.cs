@@ -62,7 +62,16 @@ namespace NDTester
                         }
                         else
                         {
-                            if (orientation.HasAllSet()) break;
+                            bool allSet = true;
+                            for (int i = 0; i < orientationLength; i++)
+                            {
+                                if (!orientation[i])
+                                {
+                                    allSet = false;
+                                    break;
+                                }
+                            }
+                            if (allSet) break;
 
                             orientationCount++;
                             for (int i = 0; i < orientationLength; i++) orientation[i] = (orientationCount & (1ul << i)) != 0;

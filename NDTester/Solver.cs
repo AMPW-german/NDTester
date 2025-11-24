@@ -1,8 +1,22 @@
 ﻿using System.Collections.Concurrent;
-using System.Diagnostics;
 
 namespace NDTester
 {
+    internal static class RandomExtensions
+    {
+        public static void Shuffle<T>(this Random rng, T[] array)
+        {
+            int n = array.Length;
+            while (n > 1)
+            {
+                int k = rng.Next(n--);
+                T temp = array[n];
+                array[n] = array[k];
+                array[k] = temp;
+            }
+        }
+    }
+
     public class SolverResult
     {
         public bool valid;
@@ -18,8 +32,21 @@ namespace NDTester
         }
     }
 
+    public class PermutationInfo
+    {
+        public OrthogonalObject[] OrthogonalObjects { get; private set; }
+        public Container[] Containers { get; private set; }
+
+        public PermutationInfo(OrthogonalObject[] orthogonalObjects, Container[] containers)
+        {
+            OrthogonalObjects = orthogonalObjects.ToArray();
+            Containers = containers.ToArray();
+        }
+    }
+
     public class Solver
     {
+        public bool result { get; set; }
         public ConcurrentDictionary<SolverResult, bool> results { get; set; } = new ConcurrentDictionary<SolverResult, bool>();
 
         public int Dimension { get; private set; }
@@ -46,7 +73,7 @@ namespace NDTester
 
         public static int ObjectPermutations(int objectCount) => Enumerable.Range(1, objectCount).Aggregate(1, (a, b) => a * b);
 
-        public bool solve(int maxPermutations = 8192)
+        public bool solve(int maxPermutations = 8192, int maxProcessors = 0, bool stopEarly = true)
         {
             // Different solve methods should be implemented with multi threading
             // Results can compare empty volume after packing with the empty volume in load direction (aka the empty space at the "top" of the container) to account for enclosed empty space that is wasted
@@ -56,22 +83,29 @@ namespace NDTester
             // Unique permutations are not solved yet
             int permutations = Solver.ObjectPermutations(OrthogonalObjects.Length);
 
+            var parallelOptions = new ParallelOptions
+            {
+                MaxDegreeOfParallelism = maxProcessors > 0 ? maxProcessors : Environment.ProcessorCount
+            };
+
             int numProcs = Environment.ProcessorCount;
             int concurrencyLevel = numProcs * 2;
 
-            //Console.WriteLine($"Permutation count: {permutations}");
+            result = false;
+
+            PermutationInfo[] permutationList;
 
             if (permutations < maxPermutations)
             {
+                permutationList = new PermutationInfo[permutations];
                 //Console.WriteLine("Permutation count less than max permutations, using all permutations.");
 
-                int initialCapacity = (int)permutations;
+                int initialCapacity = permutations;
                 results = new ConcurrentDictionary<SolverResult, bool>(concurrencyLevel, initialCapacity);
 
                 int objectCount = OrthogonalObjects.Length;
                 int[] counter = new int[objectCount];
 
-                Task[] tasks = new Task[permutations];
                 int taskCount = 0;
 
                 // Make deep copies for thread safety
@@ -83,10 +117,11 @@ namespace NDTester
                 for (int j = 0; j < Containers.Length; j++)
                     containersCopy[j] = Containers[j].EmptyCopy();
 
-                tasks[taskCount] = new Task(() => solverThread(orthogonalObjectsCopy, containersCopy));
+                permutationList[taskCount] = new PermutationInfo(orthogonalObjectsCopy, containersCopy);
                 taskCount++;
 
                 int i = 0;
+
                 while (i < objectCount)
                 {
                     if (counter[i] < i)
@@ -103,7 +138,7 @@ namespace NDTester
                         for (int j = 0; j < Containers.Length; j++)
                             containersCopy2[j] = Containers[j].EmptyCopy();
 
-                        tasks[taskCount] = new Task(() => solverThread(orthogonalObjectsCopy2, containersCopy2));
+                        permutationList[taskCount] = new PermutationInfo(orthogonalObjectsCopy2, containersCopy2);
                         taskCount++;
 
                         counter[i]++;
@@ -115,11 +150,6 @@ namespace NDTester
                         i++;
                     }
                 }
-
-                foreach (Task t in tasks) t.Start();
-
-                Task.WaitAll(tasks);
-                //Console.WriteLine("All tasks finished");
             }
             else
             {
@@ -132,9 +162,10 @@ namespace NDTester
                 // Largest to smallest (volume, primary dimension)
                 // Smallest to largest
 
-                results = new ConcurrentDictionary<SolverResult, bool>(concurrencyLevel, (int) maxPermutations);
+                results = new ConcurrentDictionary<SolverResult, bool>(concurrencyLevel, maxPermutations);
 
-                Task[] tasks = new Task[permutations];
+                permutationList = new PermutationInfo[maxPermutations];
+
                 int taskCount = 0;
                 int objectCount = OrthogonalObjects.Length;
 
@@ -147,7 +178,7 @@ namespace NDTester
                 for (int j = 0; j < Containers.Length; j++)
                     containersCopy[j] = Containers[j].EmptyCopy();
 
-                tasks[taskCount] = new Task(() => solverThread(orthogonalObjectsCopy, containersCopy));
+                permutationList[taskCount] = new PermutationInfo(orthogonalObjectsCopy, containersCopy);
                 taskCount++;
                 #endregion
 
@@ -160,7 +191,7 @@ namespace NDTester
                 for (int j = 0; j < Containers.Length; j++)
                     reverseContainersCopy[j] = Containers[j].EmptyCopy();
 
-                tasks[taskCount] = new Task(() => solverThread(reverseOrthogonalObjectsCopy, reverseContainersCopy));
+                permutationList[taskCount] = new PermutationInfo(reverseOrthogonalObjectsCopy, reverseContainersCopy);
                 taskCount++;
                 #endregion
 
@@ -174,7 +205,7 @@ namespace NDTester
                 for (int j = 0; j < Containers.Length; j++)
                     sortedVolumeContainersCopy[j] = Containers[j].EmptyCopy();
 
-                tasks[taskCount] = new Task(() => solverThread(sortedVolumeOrthogonalObjectsCopy, sortedVolumeContainersCopy));
+                permutationList[taskCount] = new PermutationInfo(sortedVolumeOrthogonalObjectsCopy, sortedVolumeContainersCopy);
                 taskCount++;
                 #endregion
 
@@ -187,7 +218,7 @@ namespace NDTester
                 for (int j = 0; j < Containers.Length; j++)
                     smallestSorterVolumeContainersCopy[j] = Containers[j].EmptyCopy();
 
-                tasks[taskCount] = new Task(() => solverThread(smallestSortedVolumeOrthogonalObjectsCopy, smallestSorterVolumeContainersCopy));
+                permutationList[taskCount] = new PermutationInfo(smallestSortedVolumeOrthogonalObjectsCopy, smallestSorterVolumeContainersCopy);
                 taskCount++;
                 #endregion
 
@@ -201,7 +232,7 @@ namespace NDTester
                 for (int j = 0; j < Containers.Length; j++)
                     sortedPrimaryContainersCopy[j] = Containers[j].EmptyCopy();
 
-                tasks[taskCount] = new Task(() => solverThread(sortedPrimaryOrthogonalObjectsCopy, sortedPrimaryContainersCopy));
+                permutationList[taskCount] = new PermutationInfo(sortedPrimaryOrthogonalObjectsCopy, sortedPrimaryContainersCopy);
                 taskCount++;
                 #endregion
 
@@ -214,13 +245,13 @@ namespace NDTester
                 for (int j = 0; j < Containers.Length; j++)
                     smallestSortedPrimaryContainersCopy[j] = Containers[j].EmptyCopy();
 
-                tasks[taskCount] = new Task(() => solverThread(smallestSortedPrimaryOrthogonalObjectsCopy, smallestSortedPrimaryContainersCopy));
+                permutationList[taskCount] = new PermutationInfo(smallestSortedPrimaryOrthogonalObjectsCopy, smallestSortedPrimaryContainersCopy);
                 taskCount++;
                 #endregion
 
                 #region randomOrder
                 Random r = new Random();
-                while (taskCount < (int) maxPermutations)
+                while (taskCount < maxPermutations)
                 {
                     OrthogonalObject[] rngOrthogonalObjectsCopy = new OrthogonalObject[objectCount];
                     for (int j = 0; j < objectCount; j++)
@@ -231,21 +262,35 @@ namespace NDTester
                     for (int j = 0; j < Containers.Length; j++)
                         smallestSortedPrimaryContainersCopy[j] = Containers[j].EmptyCopy();
 
-                    tasks[taskCount] = new Task(() => solverThread(rngOrthogonalObjectsCopy, rngContainerCopy));
+                    permutationList[taskCount] = new PermutationInfo(rngOrthogonalObjectsCopy, rngContainerCopy);
                     taskCount++;
                 }
                 #endregion
-
-                foreach (Task t in tasks) t.Start();
-
-                Task.WaitAll(tasks);
-                //Console.WriteLine("All tasks finished");
             }
+
+            Parallel.ForEach(permutationList, parallelOptions, (item, state) =>
+            {
+                if (result && stopEarly)
+                {
+                    state.Stop();
+                    return;
+                }
+
+                if (solverThread(item))
+                {
+                    result = true;
+                    if (stopEarly) state.Stop();
+                }
+            });
+
             return results.Any(kvp => kvp.Value);
         }
 
-        public bool solverThread(OrthogonalObject[] OrthogonalObjects, Container[] Containers)
+        public bool solverThread(PermutationInfo info)
         {
+            OrthogonalObject[] OrthogonalObjects = info.OrthogonalObjects;
+            Container[] Containers = info.Containers;
+
             //Array.Sort(OrthogonalObjects);
             //Array.Sort(Containers);
             foreach (OrthogonalObject obj in OrthogonalObjects)

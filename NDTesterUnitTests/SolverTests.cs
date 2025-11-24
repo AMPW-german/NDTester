@@ -14,7 +14,7 @@ namespace NDTester.Tests
 
             //Container con02d = new Container(new double[2] { 20, 20 });
             //Container con12d = new Container(new double[2] { 40, 40 });
-            Container con22d = new Container(new double[2] { 2000, 4000 });
+            Container con22d = new Container(new double[2] { 200000, 400000 });
 
             //OrthogonalObject obj02d = new OrthogonalObject(new double[2] { 10, 10 }, 4);
             OrthogonalObject obj12d = new OrthogonalObject(new double[2] { 40, 20 }, 55);
@@ -143,7 +143,7 @@ namespace NDTester.Tests
             Container con03d = new Container(new double[3] { 10, 20, 30 });
             Container con13d = new Container(new double[3] { 40, 40, 40 });
             Container con23d = new Container(new double[3] { 100, 100, 100 });
-            Container con33d = new Container(new double[3] { 10000, 10000, 10000 });
+            Container con33d = new Container(new double[3] { 1000, 1000, 1000 });
 
             OrthogonalObject obj03d = new OrthogonalObject(new double[3] { 20, 30, 10 }, 2);
             OrthogonalObject obj13d = new OrthogonalObject(new double[3] { 10, 10, 10 }, 10);
@@ -165,7 +165,7 @@ namespace NDTester.Tests
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
-            bool result3d = solver3d.solve();
+            bool result3d = solver3d.solve(stopEarly: false);
 
             sw.Stop();
             Console.WriteLine($"Solve time: {sw.ElapsedMilliseconds} ms, {sw.ElapsedTicks} ticks");
