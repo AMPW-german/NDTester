@@ -86,7 +86,7 @@
                             {
                                 if (sizeD != d)
                                 {
-                                    if (currentPC.Size[sizeD] != testPC.Size[sizeD])
+                                    if (currentPC.Size[sizeD] != testPC.Size[sizeD] || currentPC.Position[sizeD] != testPC.Position[sizeD])
                                     {
                                         canCombine = false;
                                         combineDim = -1;
